@@ -1,0 +1,4 @@
+# 忽略project文件夹中的内容，其内容为cmake 产生的VS2017工程文件
+project/*
+project/.vs/*
+
