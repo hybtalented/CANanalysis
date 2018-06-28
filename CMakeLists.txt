@@ -1,0 +1,76 @@
+cmake_minimum_required(VERSION 3.1)
+
+project(CANanlysis)
+
+set(${PROEJCT_NAME}_qt_LIBS)
+if(CMAKE_GENERATOR MATCHES MinGW)
+	set(MinGW_PROJECT ON)
+	find_package(OpenGL REQUIRED)
+	set(Qt5_DIR "D:/ku/QT/formingw64/lib/cmake/Qt5")
+	list(APPEND ${PROEJCT_NAME}_qt_LIBS ${OPENGL_gl_LIBRARY})
+	list(APPEND ${PROEJCT_NAME}_qt_LIBS ${OPENGL_glu_LIBRARY})
+	
+endif()
+## set VERSION
+set(Version_MAJOR 0)
+set(Version_MINOR 1)
+
+
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTORCC ON)
+
+if(POLICY CMP0071)
+	cmake_policy(SET CMP0071 NEW)
+endif()
+include_directories(include qt/include CAN/include qt/ui ${PROJECT_BINARY_DIR})
+#set(RESOURCE_DIR resources/resouces.qrc)
+configure_file("${PROJECT_SOURCE_DIR}/Config/chartconfig.h.in" "${PROJECT_BINARY_DIR}/chartconfig.h")
+find_package(Qt5 REQUIRED Widgets Core Gui Charts)
+FILE(GLOB QT_HEADERS qt/include/*.h)
+FILE(GLOB QT_SRCS qt/src/*.c*?)
+FILE(GLOB QT_UIS qt/ui/*.ui)
+FILE(GLOB SRC_FILES src/*.c*?)
+FILE(GLOB HEAD_FILES include/*.h)
+FILE(GLOB QT_QRCS qt/qrc/*.qrc)
+FILE(GLOB CAN_HEADERS CAN/include/*.h)
+FILE(GLOB CAN_SRCS CAN/src/*.cpp)
+FILE(GLOB QT_UIS_HEADERS qt/ui/*.h)
+set(CONFIG_HEADER)
+list(APPEND CONFIG_HEADER "${PROJECT_BINARY_DIR}/chartconfig.h")
+list(APPEND QT_HEADERS ${QT_UIS_HEADERS} )
+qt5_wrap_cpp(MOCS ${QT_HEADERS})
+qt5_wrap_ui(UIC ${QT_UIS})
+qt5_add_resources(QT_RCCS ${QT_QRCS})
+
+
+
+foreach(mods Widgets Core Gui Charts)
+	list(APPEND ${PROEJCT_NAME}_qt_LIBS Qt5::${mods})
+endforeach()
+
+
+
+message(STATUS "PROJECT_NAME:  ${PROJECT_NAME}.\n the project contain files:")
+message(STATUS "SRC_FILES:${SRC_FILES}" )
+message(STATUS "HEAD_FILES:${HEAD_FILES}" )
+message(STATUS "QT_HEADERS:${QT_HEADERS}")
+message(STATUS "QT_SRCS:${QT_SRCS}")
+message(STATUS "QT_UIS:${QT_UIS}")
+message(STATUS "QT_MOCS:${QT_MOCS}")
+message(STATUS "CONFIG_HEADER: ${CONFIG_HEADER}")
+message(STATUS "QT_QRCS:${QT_QRCS}")
+message(STATUS "QT_RCCS:${QT_RCCS}")
+message(STATUS "CAN_SRCS:${CAN_SRCS}" )
+message(STATUS "CAN_HEADERS:${CAN_HEADERS}" )
+message(STATUS "QT5_MODS:${${PROEJCT_NAME}_qt_LIBS}")
+
+if(SRC_FILES OR QT_SRCS)
+	if(CAN_SRCS)
+		message(STATUS "add SHARED library CAN")
+		add_library(CAN STATIC ${CAN_SRCS} ${CAN_HEADERS})
+		list(APPEND ${PROEJCT_NAME}_qt_LIBS CAN)
+	endif()
+    add_executable(${PROJECT_NAME} ${SRC_FILES} ${HEAD_FILES} ${QT_HEADERS} ${QT_SRCS} ${QT_UIS} ${QT_QRCS})
+    target_link_libraries(${PROJECT_NAME} ${${PROEJCT_NAME}_qt_LIBS})
+endif()

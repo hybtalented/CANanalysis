@@ -1,0 +1,8 @@
+-ID:/program/cmake program/qtprotject/chart/include
+-ID:/program/cmake program/qtprotject/chart/qt/include
+-ID:/program/cmake program/qtprotject/chart
+-DWIN32
+--compiler-flavor=msvc
+-o
+D:/program/cmake program/qtprotject/chart/qt/include/moc_setdataform.cpp
+D:/program/cmake program/qtprotject/chart/qt/include/setdataform.h

@@ -1,0 +1,13 @@
+<RCC>
+    <qresource prefix="/toolbar">
+        <file>document-save-as.png</file>
+        <file>horizontalbar.png</file>
+        <file>verticalbar.png</file>
+        <file>gallery.png</file>
+        <file>addrow.png</file>
+        <file>filenew.png</file>
+        <file>fileopen.png</file>
+        <file>pie.png</file>
+        <file>save.png</file>
+    </qresource>
+</RCC>
