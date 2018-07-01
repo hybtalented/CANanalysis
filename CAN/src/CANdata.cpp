@@ -241,6 +241,121 @@ Basic_CAN_frame& CAN_BHM::operator=(Basic_CAN_frame& can){
 		oss<<"BMS软件版本号："<<oct<<(getByte(44)<<8)+getByte(45)<<"年"<<(UINT)getByte(43)<<"月"<<(UINT)getByte(42)<<"日，第"<<(UINT)getByte(41)<<"次编译.";
 	 return oss.str();
  }
+ string CAN_BRM::getDetail(int i) const {
+	 ostringstream oss;
+	 BYTE name[5];
+	 UINT num;
+	 switch (i) {
+	 case 0:
+		 oss << (UINT)getByte(0) << '.' << getWord(1);
+		 break;
+	 case 1:
+		 switch (getByte(3)) {
+		 case 0x01:
+			 oss << "铅酸电池.";
+			 break;
+		 case 0x02:
+			 oss << "镍氢电池.";
+			 break;
+		 case 0x03:
+			 oss << "磷酸电池.";
+			 break;
+		 case 0x04:
+			 oss << "锰酸电池";
+			 break;
+		 case 0x05:
+			 oss << "钴酸电池.";
+			 break;
+		 case 0x06:
+			 oss << "三元材料电池.";
+			 break;
+		 case 0x07:
+			 oss << "聚合物锂电池.";
+			 break;
+		 case 0x08:
+			 oss << "钛酸电池.";
+			 break;
+		 case 0xff:
+			 oss << "未知电池.";
+			 break;
+		 default:
+			 oss << "错误!!!";
+		 }
+		 break;
+	 case 2:
+		 oss << 0.1 * getWord(4) << "A。h";
+		 break;
+	 case 3:
+		 oss << "额定电压为:" << 0.1 * getWord(6) << "V";
+		 break;
+	 case 4:
+		 name[4] = '\0'; for (UINT i = 0; i < 4; i++)name[i] = getByte(8 + i);
+		 oss << name;
+		 break;
+	 case 5:
+		 num = getDWord(12);
+		 oss << "0x" << hex << setw(8) << setfill('0') << num;
+		 break;
+	 case 6:
+		 for (UINT i = 0; i < 3; i++) name[i] = getByte(16 + i);
+		 oss <<UINT(1985 + name[0]) << "年" << (UINT)name[1] << "月" << (UINT)name[2] << "日";
+		 break;
+	 case 7:
+		 num = getByte(19) + (getWord(20) << 8);
+		 if (num != 0xffffff) {
+			 oss << "充电次数:" << num << "次;";
+		 }
+		 break;
+	 case 8:
+		 switch (getByte(22)) {
+		 case 0:
+			 oss << "租赁.";
+			 break;
+		 case 1:
+			 oss << "车辆自有.";
+			 break;
+		 }
+		 break;
+	 case 9:
+		 for (UINT i = 0; i < 17; i++)
+			 oss << getByte(24 + i);
+		 break;
+	 case 10:
+		 oss << (getByte(44) << 8) + getByte(45) << "年" << (UINT)getByte(43) << "月" << (UINT)getByte(42) << "日，第" << (UINT)getByte(41) << "次编译.";
+		 break;
+	 default:
+		 return "";
+	 }
+	 return oss.str();
+ }
+ const char* CAN_BRM::detailName(int i)const {
+	 switch (i) {
+	 case 0:
+		 return "通信协议版本号";
+	 case 1:
+		 return "电池类型";
+	 case 2:
+		 return "整车动力蓄电池额定容量";
+	 case 3:
+		 return "额定电压";
+	 case 4:
+		 return "电池生产产商";
+	 case 5:
+		 return "电池组序号";
+	 case 6:
+		 return "生产日期";
+	 case 7:
+		 return "充电次数";
+	 case 8:
+		 return "电池产权";
+	 case 9:
+		 return "车辆识别号";
+	 case 10:
+		 return "BMS软件版本号";
+	 default:
+		 return "";
+	 }
+ }
 BOOL CAN_BRM::rec_finish()const{
 	if(frames.size() < BRM_TP_SIZE)
 		return false;
@@ -362,6 +477,57 @@ Basic_CAN_frame& CAN_CRM::operator=(Basic_CAN_frame& can){
 	oss<<"最高允许充电电流为:"<<0.1*getWord(2) - 400<<"A,最高允许总电压为"<<0.1 *getWord(6)<<"V.动力蓄电池标称总能量为"<<0.1*getWord(4)<<"Kw。h.";
 	oss<<"最高允许温度:"<<(UINT)getByte(8)-50<<"摄氏度.当前电池电量(SOC):"<<0.1*(UINT)getWord(9)<<"%,总电压:"<<0.1*getWord(11)<<"V.";
 	return oss.str();
+ }
+ string CAN_BCP::getDetail(int i) const {
+	 ostringstream oss;
+	 BYTE name[5];
+	 UINT num;
+	 switch (i) {
+	 case 0:
+		 oss << 0.01*getWord(0) << "V";
+		 break;
+	 case 1:
+		 oss << 0.1*getWord(2) - 400 << "A" ;
+		 break;
+	 case 2:
+		 oss << 0.1 *getWord(6) << "V";
+		 break;
+	 case 3:
+		 oss << 0.1*getWord(4) << "Kw。h.";
+		 break;
+	 case 4:
+		 oss << (UINT)getByte(8) - 50 << "度" ;
+		 break;
+	 case 5:
+		 oss << 0.1*(UINT)getWord(9) << "%" ;
+		 break;
+	 case 6:
+		 oss << 0.1*getWord(11) << "V";
+		 break;
+	 default:
+		 return "";
+	 }
+	 return oss.str();
+ }
+ const char* CAN_BCP::detailName(int i)const {
+	 switch (i) {
+	 case 0:
+		 return "单体动力蓄电池最高允许电压";
+	 case 1:
+		 return "最高允许充电电流";
+	 case 2:
+		 return "最高允许总电压";
+	 case 3:
+		 return "动力蓄电池标称总能量";
+	 case 4:
+		 return "最高允许温度";
+	 case 5:
+		 return "当前电池电量(SOC)";
+	 case 6:
+		 return "总电压";
+	 default:
+		 return "";
+	 }
  }
 BOOL CAN_BCP::rec_finish()const{
 	if(frames.size() < BCP_TP_SIZE)
@@ -749,8 +915,54 @@ Basic_CAN_frame& CAN_BCL::operator=(Basic_CAN_frame& can){
  string CAN_BCS::get_detail()const{
 	ostringstream oss;
 	oss<<"充电电压测量值:"<<0.1*getWord(0)<<"V.";
-	oss<<"充电电流测量值:"<<0.1 * getWord(2) - 400<<"A.最高当体蓄电池电压及其组号:("<<0.1 * (0xfff & getWord(4))<<"V,0x"<<(0xf&(getWord(4)>>12))<<").当前荷电状态(SOC):"<<(UINT)getByte(6)<<"%.目前剩余充电时间为"<<getWord(7)<<"分钟.";
+	oss<<"充电电流测量值:"<<0.1 * getWord(2) - 400<<"A.最高单体蓄电池电压及其组号:("<<0.1 * (0xfff & getWord(4))<<"V,0x"<<(0xf&(getWord(4)>>12))<<").当前荷电状态(SOC):"<<(UINT)getByte(6)<<"%.目前剩余充电时间为"<<getWord(7)<<"分钟.";
 	return oss.str();
+ }
+ string CAN_BCS::getDetail(int i) const {
+	 ostringstream oss;
+	 BYTE name[5];
+	 UINT num;
+	 switch (i) {
+	 case 0:
+		 oss  << 0.1*getWord(0) << "V";
+		 break;
+	 case 1:
+		 oss<< 0.1 * getWord(2) - 400 << "A";
+		 break;
+	 case 2:
+		 oss << 0.1 * (0xfff & getWord(4)) << "V" ;
+		 break;
+	 case 3:
+		 oss <<"0x"<<hex<<setw(1)<< (0xf & (getWord(4) >> 12)) ;
+		 break;
+	 case 4:
+		 oss << (UINT)getByte(6) << "%" ;
+		 break;
+	 case 5:
+		 oss << getWord(7) << "min";
+		 break;
+	 default:
+		 return "";
+	 }
+	 return oss.str();
+ }
+ const char* CAN_BCS::detailName(int i)const {
+	 switch (i) {
+	 case 0:
+		 return "充电电压测量值";
+	 case 1:
+		 return "充电电流测量值";
+	 case 2:
+		 return "最高单体蓄电池电压";
+	 case 3:
+		 return "最高单体蓄电池电压组号";
+	 case 4:
+		 return "当前荷电状态(SOC)";
+	 case 5:
+		 return "剩余充电时间";
+	 default:
+		 return "";
+	 }
  }
 BOOL CAN_BCS::rec_finish()const{
 	if(frames.size() < BCS_TP_SIZE)
