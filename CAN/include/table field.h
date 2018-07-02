@@ -20,7 +20,7 @@ class Table_field{
 public:
 	VOID initFields();
 	VOID initFieldsStandard();
-	UINT32 getNumField(){return fields.size();}
+    UINT32 getNumField(){return fields.size();}
 	Table_field(istream&, BYTE fs='\t', BOOL stand = true);
 	Table_field(string&&,BYTE fs = '\t', BOOL stand = true);
 	Table_field(string&, BYTE fs='\t', BOOL stand = true);

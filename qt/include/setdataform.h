@@ -13,7 +13,15 @@ class QTableWidget;
 class ChartForm;
 class QActionGroup;
 class ViewFrameData;
+class ViewMultiFrame;
 class ClickTimer;
+class ItemRow {
+public:
+	enum ItemType { Multiframe, Singleframe } type;
+	ItemRow(ItemType t= Multiframe, int r=0) :type(t), row(r) {}
+	int row;
+
+};
 class SetDataForm :public QMainWindow
 {
 	Q_OBJECT
@@ -35,6 +43,7 @@ protected slots:
 	void showItemWindow(const QModelIndex&index);
 	void ClickOnce(const QModelIndex&);
 	void changeFrame(int i, ViewFrameData* view);
+	void changeFrame(int i, ViewMultiFrame* view);
 public slots:
 	void fileNew();
 	void fileOpen();
@@ -55,6 +64,10 @@ public slots:
 	void saveOptions();
 private slots:
 	void getRowNum(QString);
+	void setShowMultiFrame(bool i) {
+		m_showMultiFrame = i;
+		init_table();
+	}
 private:
 	QTableWidget * table;
 	QList<QTableWidgetItem*> initOneRow(int row,bool enable = true);
@@ -72,10 +85,22 @@ private:
 	void updateRecentFilesMenu();
 	void setColumnGroupData(const QList<QTableWidgetItem*>&,bool direct=true);
 	enum { MAX_RECENTFILES = 9 };
+	void init_multiFrame();
+	void delete_elementdata(){
+		for (CANVector::iterator it = m_elements.begin(); it != m_elements.end(); ++it) {
+			delete (*it).CANframe();
+		}
+		m_multiFrame.clear();
+		m_elementMap.clear();
+		m_elements.clear();
+	}
 	void init_table();
 	void init_menutoolbar();
 	void init();
+	bool m_showMultiFrame;
 	bool m_changed;
+	QVector<Multi_frame*>m_multiFrame;
+	QVector<ItemRow> m_elementMap;
 	CANVector m_elements;
 	QString m_filename;
 	ChartForm * chartform;

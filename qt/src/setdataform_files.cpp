@@ -20,6 +20,7 @@ void SetDataForm::load(const QString&filename) {
 	CANREAD can;
 	stdStringList temp;
 	can.read_data(file);
+	delete_elementdata();
 	while (!can.atEnd()) {
 		can >> element;
 		m_elements.push_back(element);
@@ -27,6 +28,7 @@ void SetDataForm::load(const QString&filename) {
 	file.close();
 	setWindowIconText(filename);
 	updateRecentFiles(filename);
+	init_multiFrame();
 	m_changed = false;
 }
 void SetDataForm::fileSave() {

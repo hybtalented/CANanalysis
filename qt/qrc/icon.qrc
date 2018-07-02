@@ -9,5 +9,6 @@
         <file>fileopen.png</file>
         <file>pie.png</file>
         <file>save.png</file>
+        <file>merge.png</file>
     </qresource>
 </RCC>

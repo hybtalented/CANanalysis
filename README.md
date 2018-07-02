@@ -1,7 +1,7 @@
  CANanylisis
 
  #########################################################################
- ## 			               CMAKE PROJECT               				##
+ ## 	              	 	CMAKE PROJECT  				##
  #########################################################################
  this project can't only compile by Visual Studio 2017, other compiler haven't be test.
  

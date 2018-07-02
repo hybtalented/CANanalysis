@@ -23,7 +23,7 @@ inline string uchar2str(BYTE c) {
 	return str;
 }
 VOID CANREAD::read_data(istream& in,bool igfl){
-	if (timestampes.size()) {
+	if (canframes.size()) {
 		this->~CANREAD();
 	}
 	string line;
@@ -43,7 +43,7 @@ VOID CANREAD::read_data(istream& in,bool igfl){
 		}
 		newcan->get_data(tf);
 		newcan->setIndex(tf.getDWord(indexcol));
-		timestampes.push_back(tf.getDWordHex(2));
+		newcan->setTime(tf.getDWordHex(2));
 		canframes.push_back(newcan);
 	}
 }
@@ -351,13 +351,12 @@ VOID CANREAD::print(ostream& out){
 
 CANREAD& CANREAD::operator>>(stdStringList& out) {
 	out.clear();
-	assert(canframes.size() > 0 && timestampes.size() > 0);
+	assert(canframes.size() > 0);
 	DWORD canid = (*canframes.begin())->getCANID();
 	UINT index;
 	index = (*canframes.begin())->getIndex();
-	out << int2str(index)<<int2str(timestampes[0]) << (*canframes.begin())->getState()  << (*canframes.begin())->get_detail();
+	out << int2str(index)<<int2str((*canframes.begin())->getTime()) << (*canframes.begin())->getState()  << (*canframes.begin())->get_detail();
 	canframes.erase(canframes.begin());
-	timestampes.erase(timestampes.begin());
 	return *this;
 }
 stdStringList& operator<<(stdStringList& strs, const string s) {

@@ -13,6 +13,7 @@
 #include<QtWidgets/qapplication.h>
 #include<QtWidgets/qlineedit.h>
 #include<QtCore/qtimer.h>
+#include<QtWidgets/qcheckbox.h>
 #pragma execution_character_set("utf-8")
 SetDataForm::SetDataForm(const QString &filename, int decimalPaces, QWidget*parent, const char* name , bool modal, Qt::WindowFlags f ):QMainWindow(parent,f) ,m_filename(filename),chartform(0){
 	QSettings settings(QSettings::UserScope, qApp->applicationName(), qApp->organizationName(), this);
@@ -23,6 +24,7 @@ SetDataForm::SetDataForm(const QString &filename, int decimalPaces, QWidget*pare
 	int windowY = settings.value("WindowY", 200).toInt();
 	int windowWidth = settings.value("WindowWidth", 460).toInt();
 	int windowHeight = settings.value("WindowHeight", 530).toInt();
+	m_showMultiFrame = settings.value("Show Multi-Frame", false).toBool();
 	setGeometry(windowX, windowY, windowWidth, windowHeight);
 	setWindowTitle(name);
 	m_decimalPaces = decimalPaces;
@@ -46,7 +48,7 @@ SetDataForm::SetDataForm(const QString &filename, int decimalPaces, QWidget*pare
 	connect(chartGroup, SIGNAL(triggered(QAction*)), this, SLOT(updateChartType(QAction*)));
 }
 void SetDataForm::init() {
-	QString title = "Edit Chart	";
+	QString title = "CAN2.0协议帧	";
 	if (m_filename.isEmpty()) {
 		title += "*";
 	}
@@ -54,7 +56,7 @@ void SetDataForm::init() {
 		title += m_filename + "-	";
 	}
 	setWindowTitle(title);
-	setWhatsThis("a program to draw charts");
+	setWhatsThis("显示GBT27930 CAN 通信标准协议帧的程序");
 	m_filename = QString::null;
 	m_elements.clear();
 	m_changed = false;
@@ -67,7 +69,7 @@ void SetDataForm::init_menutoolbar() {
 	QAction*fileSaveAsAction;
 	fileNewAction = new QAction(QPixmap(":/toolbar/filenew.png"), "new Chart", this);
 	fileNewAction->setShortcut(Qt::CTRL | Qt::Key_N);
-	fileOpenAction = new QAction(QPixmap(":/toolbar/fileopen.png"), "Open Chart", this);
+	fileOpenAction = new QAction(QPixmap(":/toolbar/fileopen.png"), "打开新文件", this);
 	fileOpenAction->setShortcut(Qt::CTRL | Qt::Key_O);
 	fileSaveAction = new QAction(QPixmap(":/toolbar/save.png"), "Save Chart", this);
 	fileSaveAction->setShortcut(Qt::CTRL | Qt::Key_S);
@@ -107,26 +109,32 @@ void SetDataForm::init_menutoolbar() {
 	fileTools->addAction(optionsPieChartAction);
 	fileTools->addAction(optionsHorizontalBarChartAction);
 	fileTools->addAction(optoinsVerticalBarChartAction);
+	QAction * multiframeAction = new QAction(QPixmap(":/toolbar/merge.png"),"合并多帧传输帧", this);
+	multiframeAction->setCheckable(true);
+	multiframeAction->setChecked(m_showMultiFrame);
+	fileTools->addAction(multiframeAction);
+	connect(multiframeAction, SIGNAL(triggered(bool)), this, SLOT(setShowMultiFrame(bool)) );
 	// items in "file" menu
-	fileMenu = new QMenu(tr("File"), this);
+	fileMenu = new QMenu(tr("&文件"), this);
 	menuBar()->addMenu(fileMenu);
 	fileMenu->addAction(fileNewAction);
 	fileMenu->addAction(fileOpenAction);
 	fileMenu->addAction(fileSaveAction);
 	fileMenu->addAction(fileSaveAsAction);
-	QAction*qAction = fileMenu->addAction("&Quit", this, SLOT(fileQuit()));
+	QAction*qAction = fileMenu->addAction("&退出", this, SLOT(fileQuit()));
 	qAction->setShortcut(Qt::ALT | Qt::Key_F4);
 	qAction->setObjectName("Quit");
 	// items in "Edit" menu
-	editMenu = new QMenu(tr("Edit"),this);
+	editMenu = new QMenu(tr("&编辑"),this);
 	menuBar()->addMenu(editMenu);
 	editMenu->addAction(addrow);
 	// items in "option" menu
-	optionMenu = new QMenu(tr("Option"), this);
+	optionMenu = new QMenu(tr("&设置"), this);
 	menuBar()->addMenu(optionMenu);
-	QMenu*plotMenu = optionMenu->addMenu("&Plot");
+	QMenu*plotMenu = optionMenu->addMenu("&绘图");
 	plotMenu->setObjectName("plotmenu");
 	optionMenu->addMenu(plotMenu);
+	optionMenu->addAction(multiframeAction);
 	plotMenu->addAction(optionsPieChartAction);
 	plotMenu->addAction(optionsHorizontalBarChartAction);
 	plotMenu->addAction(optoinsVerticalBarChartAction);
@@ -134,7 +142,7 @@ void SetDataForm::init_menutoolbar() {
 // Show recent file in file menu
 #include"countaction.h"
 void SetDataForm::updateRecentFilesMenu() {
-	const QString fileRecents = "File Recents";
+	const QString fileRecents = "最近打开的文件";
 	QMenu* recentMenu = fileMenu->findChild<QMenu*>(fileRecents, Qt::FindDirectChildrenOnly);
 	if (recentMenu) {
 		recentMenu->clear();
@@ -177,6 +185,7 @@ void SetDataForm::saveOptions() {
 	settings.setValue("WindowWidth", r.width());
 	settings.setValue("WindowHeight", r.height());
 	settings.setValue("Decimals", m_decimalPaces);
+	settings.setValue("Show Multi-Frame", m_showMultiFrame);
 	for (int i = 0; i< MAX_RECENTFILES; i++) {
 		if (i < m_recentFiles.count()) {
 			settings.setValue(QString("File/") + QString::number(i + 1), m_recentFiles[i]);
@@ -205,13 +214,68 @@ void SetDataForm::updateChartType(QAction*act) {
 	else if (act == optionsHorizontalBarChartAction) {
 		chartform->setChartType(chartform->HORIZONTAL_BAR);
 	}
-
 	chartform->drawElements();
 }
-SetDataForm::~SetDataForm() {
-	for (CANVector::iterator it = m_elements.begin(); it != m_elements.end(); ++it) {
-		delete (*it).CANframe();
+
+
+void SetDataForm::init_multiFrame() {
+	Multi_frame* multiframe = NULL;
+	for (int i = 0; i < m_elements.size(); ++i) {
+		switch (m_elements[i].CANframe()->getCANID()) {
+		case TP_START_CANID:
+			if (multiframe) {
+				delete multiframe;
+			}
+			if (m_elements[i].CANframe()->getConsole() != TP_START_CONSOLE) {
+				multiframe = NULL;
+			}
+			else switch (m_elements[i].CANframe()->getPGN()) {
+			case BRM_PGN:
+				multiframe = new CAN_BRM(dynamic_cast<CAN_TP_START*>(m_elements[i].CANframe()));
+				break;
+			case BCP_PGN:
+				multiframe = new CAN_BCP(dynamic_cast<CAN_TP_START*>(m_elements[i].CANframe()));
+				break;
+			case BCS_PGN:
+				multiframe = new CAN_BCS(dynamic_cast<CAN_TP_START*>(m_elements[i].CANframe()));
+				break;
+			default:
+				multiframe = NULL;
+				break;
+			}
+			break;
+		case TP_REPLY_CANID:
+			if (!multiframe) {
+				break;
+			}
+			if (m_elements[i].CANframe()->getPGN() != multiframe->getPGN()) {
+				delete multiframe;
+				multiframe = NULL;
+			}
+			else if (m_elements[i].CANframe()->getConsole() == TP_REPLY_CONSOLE) {
+				multiframe->addFrame(m_elements[i].CANframe());
+			}
+			else if (m_elements[i].CANframe()->getConsole() == TP_END_CONSOLE) {
+				multiframe->addFrame(m_elements[i].CANframe());
+				if (multiframe->rec_finish()) {
+					m_elementMap.push_back(ItemRow(ItemRow::ItemType::Multiframe, m_multiFrame.count()));
+					m_multiFrame.push_back(multiframe);
+					multiframe = NULL;
+				}
+			}
+			break;
+		case TP_DATA_CANID:
+			if (!multiframe) break;
+			multiframe->addFrame(m_elements[i].CANframe());
+			break;
+		default:
+			m_elementMap.push_back(ItemRow(ItemRow::ItemType::Singleframe, i));
+		}
 	}
+}
+
+SetDataForm::~SetDataForm() {
+	delete_elementdata();
 }
 #include<QtWidgets/qpushbutton.h>
 #include<QtWidgets/qlabel.h>

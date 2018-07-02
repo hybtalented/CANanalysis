@@ -236,7 +236,7 @@ Basic_CAN_frame& CAN_BHM::operator=(Basic_CAN_frame& can){
 		}
 		oss<<"车辆识别号:";
 		for(UINT i = 0; i < 17; i++)
-			oss<<getByte(24 + i);
+			oss<<hex<<setw(2)<<setfill('0')<<(UINT)getByte(24 + i);
 		oss<<".\t";
 		oss<<"BMS软件版本号："<<oct<<(getByte(44)<<8)+getByte(45)<<"年"<<(UINT)getByte(43)<<"月"<<(UINT)getByte(42)<<"日，第"<<(UINT)getByte(41)<<"次编译.";
 	 return oss.str();
@@ -294,7 +294,7 @@ Basic_CAN_frame& CAN_BHM::operator=(Basic_CAN_frame& can){
 		 break;
 	 case 5:
 		 num = getDWord(12);
-		 oss << "0x" << hex << setw(8) << setfill('0') << num;
+		 oss << "0x" << hex << setw(8) << setfill('0') << UINT(num);
 		 break;
 	 case 6:
 		 for (UINT i = 0; i < 3; i++) name[i] = getByte(16 + i);
@@ -317,8 +317,9 @@ Basic_CAN_frame& CAN_BHM::operator=(Basic_CAN_frame& can){
 		 }
 		 break;
 	 case 9:
+		 oss << "0x";
 		 for (UINT i = 0; i < 17; i++)
-			 oss << getByte(24 + i);
+			 oss << hex<<setw(2)<<setfill('0')<<(UINT)getByte(24 + i);
 		 break;
 	 case 10:
 		 oss << (getByte(44) << 8) + getByte(45) << "年" << (UINT)getByte(43) << "月" << (UINT)getByte(42) << "日，第" << (UINT)getByte(41) << "次编译.";

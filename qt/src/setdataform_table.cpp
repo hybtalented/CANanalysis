@@ -13,6 +13,7 @@
 
 #include<sstream>
 #include"ViewFrameData.h"
+#include"ViewMultiFrame.h"
 #pragma execution_character_set("utf-8")
 
 const char* brushStyleName[] ={ // brush style
@@ -48,40 +49,100 @@ void SetDataForm::valueChanged(int row, int col) {
 }
 void SetDataForm::init_table() {
 	table->clear();
-	QStringList colheader;
-	colheader << tr("时间(ms)") <<tr("发送方")<<tr("接收方")<< tr("充电阶段") << tr("帧名") << tr("内容") ;
-	table->setHorizontalHeaderLabels(colheader);
-	colheader.clear();
-	table->setRowCount(m_elements.size());
-	table->setColumnCount(6);
-	table->setAutoFillBackground(true);
-	QValidator *val0 = new QDoubleValidator(table), *val2 = new QRegExpValidator(QRegExp("\\WE{0-10}$"),table);
 	QStringList rowlabel;
-	QStringList colors = QColor::colorNames();
-	table->setEditTriggers(QAbstractItemView::NoEditTriggers);
-	QPixmap pix = QPixmap(20, 20) ;
-	for (int i = 0; i < m_elements.size(); i++) {
-		rowlabel << std2qstring(m_elements[i][0]);
-		QList<QTableWidgetItem*> cols= initOneRow(i, false);
-		cols[0]->setText(QVariant(QVariant(std2qstring(m_elements[i][1])).toInt()/10).toString());
-		if (m_elements[i].CANframe()->direct()) {
-			cols[1]->setText("充电桩(C)");
-			cols[2]->setText("蓄电池(B)");
+	if (m_showMultiFrame) {
+		QStringList colheader;
+		colheader << tr("时间(ms)") << tr("发送方") << tr("接收方") << tr("充电阶段") << tr("帧名") << tr("内容");
+		table->setHorizontalHeaderLabels(colheader);
+		colheader.clear();
+		table->setRowCount(m_elements.size());
+		table->setColumnCount(6);
+		table->setAutoFillBackground(true);
+		table->setEditTriggers(QAbstractItemView::NoEditTriggers);
+		for (int i = 0; i < m_elementMap.size(); i++) {
+			if (m_elementMap[i].type == ItemRow::ItemType::Multiframe) {
+				Multi_frame* multiframe = m_multiFrame[m_elementMap[i].row];
+				rowlabel << QVariant(multiframe->frame(0)->getIndex()).toString();
+;
+				QList<QTableWidgetItem*> cols = initOneRow(i, false);
+				cols[0]->setText(QVariant(QVariant(multiframe->frame(0)->getTime()).toInt() / 10).toString());
+				if (multiframe->direct()) {
+					cols[1]->setText("充电桩(C)");
+					cols[2]->setText("蓄电池(B)");
+				}
+				else {
+					cols[1]->setText("蓄电池(B)");
+					cols[2]->setText("充电桩(C)");
+				}
+				cols[3]->setText(multiframe->getState());
+				stringstream ss;
+				int a = multiframe->getPGN();
+				ss << hex << a;
+				string s;
+				ss >> s;
+				cols[4]->setText(QString("%1(%2) - 0x%3").arg(multiframe->get_frame_name()).arg(multiframe->typeName().c_str()).arg(std2qstring(s)));
+				cols[5]->setText(std2qstring(multiframe->get_detail()));
+				setColumnGroupData(cols, multiframe->direct());
+				table->setRowHeight(i, 120);
+			}
+			else if (m_elementMap[i].type == ItemRow::ItemType::Singleframe) {
+				rowlabel << std2qstring(m_elements[m_elementMap[i].row][0]);
+				QList<QTableWidgetItem*> cols = initOneRow(i, false);
+				cols[0]->setText(QVariant(QVariant(std2qstring(m_elements[m_elementMap[i].row][1])).toInt() / 10).toString());
+				if (m_elements[m_elementMap[i].row].CANframe()->direct()) {
+					cols[1]->setText("充电桩(C)");
+					cols[2]->setText("蓄电池(B)");
+				}
+				else {
+					cols[1]->setText("蓄电池(B)");
+					cols[2]->setText("充电桩(C)");
+				}
+				cols[3]->setText(std2qstring(m_elements[m_elementMap[i].row][2]));
+				stringstream ss;
+				int a = m_elements[m_elementMap[i].row].CANframe()->getCANID();
+				ss << hex << a;
+				string s;
+				ss >> s;
+				cols[4]->setText(QString("%1(%2) - 0x%3").arg(m_elements[m_elementMap[i].row].CANframe()->get_frame_name()).arg(m_elements[m_elementMap[i].row].CANframe()->typeName().c_str()).arg(std2qstring(s)));
+				cols[5]->setText(std2qstring(m_elements[m_elementMap[i].row][3]));
+				setColumnGroupData(cols, m_elements[m_elementMap[i].row].CANframe()->direct());
+				table->setRowHeight(i, 120);
+			}
 		}
-		else {
-			cols[1]->setText("蓄电池(B)");
-			cols[2]->setText("充电桩(C)");
+	}
+	else {
+		QStringList colheader;
+		colheader << tr("时间(ms)") << tr("发送方") << tr("接收方") << tr("充电阶段") << tr("帧名") << tr("内容");
+		table->setHorizontalHeaderLabels(colheader);
+		colheader.clear();
+		table->setRowCount(m_elements.size());
+		table->setColumnCount(6);
+		table->setAutoFillBackground(true);
+		QValidator *val0 = new QDoubleValidator(table), *val2 = new QRegExpValidator(QRegExp("\\WE{0-10}$"), table);
+		table->setEditTriggers(QAbstractItemView::NoEditTriggers);
+		for (int i = 0; i < m_elements.size(); i++) {
+			rowlabel << std2qstring(m_elements[i][0]);
+			QList<QTableWidgetItem*> cols = initOneRow(i, false);
+			cols[0]->setText(QVariant(QVariant(std2qstring(m_elements[i][1])).toInt() / 10).toString());
+			if (m_elements[i].CANframe()->direct()) {
+				cols[1]->setText("充电桩(C)");
+				cols[2]->setText("蓄电池(B)");
+			}
+			else {
+				cols[1]->setText("蓄电池(B)");
+				cols[2]->setText("充电桩(C)");
+			}
+			cols[3]->setText(std2qstring(m_elements[i][2]));
+			stringstream ss;
+			int a = m_elements[i].CANframe()->getCANID();
+			ss << hex << a;
+			string s;
+			ss >> s;
+			cols[4]->setText(QString("%1(%2) - 0x%3").arg(m_elements[i].CANframe()->get_frame_name()).arg(m_elements[i].CANframe()->typeName().c_str()).arg(std2qstring(s)));
+			cols[5]->setText(std2qstring(m_elements[i][3]));
+			setColumnGroupData(cols, m_elements[i].CANframe()->direct());
+			table->setRowHeight(i, 120);
 		}
-		cols[3]->setText(std2qstring(m_elements[i][2]));
-		stringstream ss;
-		int a = m_elements[i].CANframe()->getCANID();
-		ss <<hex<< a;
-		string s;
-		ss >> s;
-		cols[4]->setText(QString("%1(%2) - 0x%3").arg(m_elements[i].CANframe()->get_frame_name()).arg(m_elements[i].CANframe()->typeName().c_str()).arg(std2qstring(s)));
-		cols[5]->setText(std2qstring(m_elements[i][3]));
-		setColumnGroupData(cols, m_elements[i].CANframe()->direct());
-		table->setRowHeight(i,120);
 	}
 	table->setVerticalHeaderLabels(rowlabel);
 	table->setColumnWidth(0, table->width()*0.05);
@@ -167,17 +228,59 @@ void SetDataForm::setColumnGroupData(const QList<QTableWidgetItem*>&itemlists,bo
 }
 void SetDataForm::showItemWindow(const QModelIndex&index) {
 	int row = index.row();
-	stringstream ss;
-	ViewFrameData* window = new ViewFrameData(this);
-	window->setModal(true);
-	window->setFrame(row, 0,(int) m_elements.size());
-	changeFrame(row,window);
-	connect(window, SIGNAL(frameChanged(int, ViewFrameData*)), this, SLOT(changeFrame(int, ViewFrameData*)));
-	window->show();
-
+	if (m_showMultiFrame) {
+		ViewMultiFrame * window1;
+		ViewFrameData* window;
+		switch (m_elementMap[row].type) {
+		case ItemRow::Multiframe:
+			window1 = new ViewMultiFrame(this);
+			window1->setModal(false);
+			window1->setFrame(m_elementMap[row].row,m_multiFrame[m_elementMap[row].row]);
+			window1->setFrame(m_elementMap[row].row, 0, m_multiFrame.count());
+			connect(window1, SIGNAL(frameChanged(int, ViewMultiFrame*)), this, SLOT(changeFrame(int, ViewMultiFrame*)) );
+			window1->show();
+			break;
+		case ItemRow::Singleframe:
+			int count=0;
+			for (int i = 0; i < m_elementMap.count(); ++i) {
+				if (m_elementMap[i].type == ItemRow::Singleframe) {
+					count++;
+				}
+			}
+			stringstream ss;
+			window = new ViewFrameData(this);
+			window->setModal(false);
+			window->setFrame(row, 0, count);
+			changeFrame(row, window);
+			connect(window, SIGNAL(frameChanged(int, ViewFrameData*)), this, SLOT(changeFrame(int, ViewFrameData*)));
+			window->show();
+			break;
+		}
+	}
+	else {
+		stringstream ss;
+		ViewFrameData* window = new ViewFrameData(this);
+		window->setModal(true);
+		window->setFrame(row, 0, (int)m_elements.size());
+		changeFrame(row, window);
+		connect(window, SIGNAL(frameChanged(int, ViewFrameData*)), this, SLOT(changeFrame(int, ViewFrameData*)));
+		window->show();
+	}
 }
 
 void SetDataForm::changeFrame(int row, ViewFrameData* window) {
+	if (m_showMultiFrame) {
+		for (int i = 0; i < m_elementMap.count(); ++i) {
+			if (m_elementMap[i].type == ItemRow::Singleframe) {
+				if (row <= 0) {
+					row = m_elementMap[row].row;
+					break;
+				}
+				row--;
+			}
+		}
+		
+	}
 	stringstream ss;
 	window->clearAddData();
 	Basic_CAN_frame * can = m_elements[row].CANframe();
@@ -216,6 +319,12 @@ void SetDataForm::changeFrame(int row, ViewFrameData* window) {
 		else {
 			window->setAdditionText(indexadd1++, name + ": ", s);
 		}
+	}
+}
+void SetDataForm::changeFrame(int i, ViewMultiFrame* view) {
+	if (i >= 0 && i < m_multiFrame.count()) {
+		view->clearAddData();
+		view->setFrame(i,m_multiFrame[i]);
 	}
 }
 void SetDataForm::ClickOnce(const QModelIndex&) {

@@ -12,8 +12,8 @@ if(CMAKE_GENERATOR MATCHES MinGW)
 	
 endif()
 ## set VERSION
-set(Version_MAJOR 0)
-set(Version_MINOR 1)
+set(Version_MAJOR 1)
+set(Version_MINOR 0)
 
 
 set(CMAKE_AUTOMOC ON)
